@@ -11,3 +11,11 @@ wheels/
 
 # OS
 .DS_Store
+
+# Personal working notes — not for the repo
+notes/
+
+# Raw downloads and build artifact — regenerate with scripts/fetch_raw_data.py and
+# scripts/build_db.py (see README)
+data/raw/
+data/processed/
