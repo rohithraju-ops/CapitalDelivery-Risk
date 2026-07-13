@@ -4,7 +4,7 @@ Public-data version of the capital project cost/schedule delivery-risk problem, 
 VDOT's Six-Year Improvement Program (SYIP) data and VDOT's Performance Dashboard. See
 `PRD_VDOT_Capital_Delivery_Risk_Dashboard.md` for full background, scope, and the build plan.
 
-Status: data layer built (SQL/DuckDB), modeling and dashboard layers in progress.
+Status: data layer, KPI layer, and risk-scoring model built; dashboards in progress.
 
 ## Setup
 
@@ -30,8 +30,25 @@ uv run python scripts/build_db.py         # builds data/processed/capital_delive
   download from dashboard.vdot.virginia.gov.
 
 `build_db.py` loads both into DuckDB and runs the SQL in `sql/` (in order) to produce a
-cleaned, merged `projects` table. See `docs/data_cleaning_rules.md` for exactly how the two
-sources are combined and every null-handling/merge decision made along the way.
+cleaned, merged `projects` table, contract-level schedule/cost variance, KPI summary tables,
+and the model-ready feature table. See `docs/data_cleaning_rules.md` for exactly how the two
+sources are combined and every null-handling/merge decision made along the way, and
+`docs/kpi_definitions.md` for how every KPI is defined and why.
+
+## Train and run the risk-scoring model
+
+```
+uv run python scripts/compare_models.py     # optional: re-run the 4-model comparison + plots
+uv run python scripts/train_risk_model.py   # fits + persists data/processed/risk_model.joblib
+uv run python scripts/score_projects.py     # scores active projects into the risk_scores table
+uv run python scripts/explain_model.py      # prints global top-features-driving-risk
+```
+
+Like the database, the fitted model file is not committed — regenerate it with the commands
+above. `reports/figures/` (committed) has the model comparison plots and metrics from
+`compare_models.py`. See `docs/risk_model.md` for the target definition, feature set, why
+logistic regression was chosen over the alternatives tested, and the headline
+dollar-denominated risk stat.
 
 ## Query the database
 
@@ -52,8 +69,10 @@ uv run pytest tests/ -v
 ```
 
 `tests/test_raw_data_sanity.py` validates the raw downloads; `tests/test_projects_table.py`
-validates the cleaned/merged table. Both need the data fetched and the database built first
-(see above).
+validates the cleaned/merged table; `tests/test_kpi_summary.py` validates the KPI tables;
+`tests/test_risk_model.py` validates the trained model and its scored output. All need the
+data fetched, the database built, and (for the last one) the model trained and projects
+scored first (see above).
 
 ## Data sources & attribution
 

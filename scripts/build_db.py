@@ -18,6 +18,9 @@ SQL_FILES_IN_ORDER = [
     "01_stage_syip.sql",
     "02_stage_dashboard.sql",
     "03_build_projects.sql",
+    "04_stage_contracts.sql",
+    "05_kpi_summary.sql",
+    "06_model_features.sql",
 ]
 
 
@@ -36,12 +39,22 @@ def main() -> None:
     con.register("dashboard_df", dashboard_df)
     con.execute("CREATE OR REPLACE TABLE raw_dashboard AS SELECT * FROM dashboard_df")
 
+    contracts_df = pd.read_excel(DASHBOARD_XLSX, sheet_name="Project_Delivery (Contract,UPC)")
+    con.register("contracts_df", contracts_df)
+    con.execute("CREATE OR REPLACE TABLE raw_contracts AS SELECT * FROM contracts_df")
+
     for filename in SQL_FILES_IN_ORDER:
         sql_text = (SQL_DIR / filename).read_text()
         con.execute(sql_text)
         print(f"ran {filename}")
 
-    for table in ["raw_syip", "raw_dashboard", "stg_syip", "stg_dashboard", "projects"]:
+    for table in [
+        "raw_syip", "raw_dashboard", "raw_contracts",
+        "stg_syip", "stg_dashboard", "projects",
+        "stg_contracts", "stg_contracts_distinct",
+        "kpi_rates", "kpi_cost_variance", "kpi_schedule_variance_overall", "kpi_schedule_variance_by_cut",
+        "model_features",
+    ]:
         count = con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
         print(f"{table}: {count} rows")
 
